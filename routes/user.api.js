@@ -1,4 +1,9 @@
 const express = require("express");
+const {
+  createUser,
+  getAllUsers,
+  getSingleUser,
+} = require("../controllers/user.controllers");
 const router = express.Router();
 
 //Create
@@ -23,4 +28,5 @@ router.get("/", getAllUsers);
  * @description Get user by id
  * @access public
  */
+router.get("/:id", getSingleUser);
 module.exports = router;
