@@ -53,7 +53,7 @@ taskController.getSingleTask = async (req, res, next) => {
     const task = await Task.findById(taskId);
 
     if (!task) {
-      throw new AppError(404, "Not Found", "Task not found");
+      return res.status(404).json({ message: "Task not found" });
     }
     sendResponse(
       res,
@@ -71,11 +71,7 @@ taskController.getSingleTask = async (req, res, next) => {
 
 //Delete task
 taskController.deleteTaskById = async (req, res, next) => {
-  //in real project you will getting id from req. For updating and deleting, it is recommended for you to use unique identifier such as _id to avoid duplication
-
-  // empty target mean delete nothing
   const taskId = req.params.id;
-  //options allow you to modify query. e.g new true return lastest update of data
   const options = { new: true };
   try {
     //mongoose query
@@ -93,4 +89,70 @@ taskController.deleteTaskById = async (req, res, next) => {
     next(err);
   }
 };
+
+//update assignee
+taskController.updateAssigneeById = async (req, res, next) => {
+  const taskId = req.params.id;
+  //options allow you to modify query. e.g new true return lastest update of data
+  const options = { new: true };
+  try {
+    //mongoose query
+    const updated = await Task.findByIdAndUpdate(
+      taskId,
+      { assignee: req.body.assignee },
+      options
+    );
+    if (!updated) {
+      return res.status(404).json({ message: "Task not found" });
+    }
+    sendResponse(
+      res,
+      200,
+      true,
+      { data: updated },
+      null,
+      "Update assignee successfully!"
+    );
+  } catch (err) {
+    next(err);
+  }
+};
+
+//update status
+taskController.updateStatusById = async (req, res, next) => {
+  const taskId = req.params.id;
+  const options = { new: true };
+  //get status from database
+
+  try {
+    const task = await Task.findById(taskId);
+    if (!task) {
+      return res.status(404).json({ message: "Task not found" });
+    }
+    //check status if done && input !== archive
+    if (task.status === "done" && req.body.status !== "archive") {
+      return res.status(400).json({
+        message:
+          "Cannot change status from done to another status except archive",
+      });
+    }
+    //if not done => update
+    const updated = await Task.findByIdAndUpdate(
+      taskId,
+      { status: req.body.status },
+      options
+    );
+    sendResponse(
+      res,
+      200,
+      true,
+      { data: updated },
+      null,
+      "Update status successfully!"
+    );
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = taskController;
