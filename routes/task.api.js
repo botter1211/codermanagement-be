@@ -6,6 +6,7 @@ const {
   deleteTaskById,
   updateAssigneeById,
   updateStatusById,
+  getAllTasksOfUser,
 } = require("../controllers/task.controllers");
 const router = express.Router();
 
@@ -50,4 +51,11 @@ router.put("/:id/assignee", updateAssigneeById);
  */
 router.put("/:id/status", updateStatusById);
 
+//READ
+router.get("/user/:userId", getAllTasksOfUser);
+/**
+ * @route DELETE api/tasks/:id
+ * @description Delete task by id
+ * @access public
+ */
 module.exports = router;
