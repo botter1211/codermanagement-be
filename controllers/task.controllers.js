@@ -1,15 +1,51 @@
 const { sendResponse, AppError } = require("../helpers/utils.js");
 const Task = require("../models/Task.js");
 const mongoose = require("mongoose");
+const { body, validationResult } = require("express-validator");
 
 const taskController = {};
 
+taskController.checkTaskValidation = [
+  // Validate and sanitize the 'name' field
+  body("name")
+    .trim()
+    .notEmpty()
+    .withMessage("Name is required")
+    .isString()
+    .withMessage("Name must be a valid string"),
+  // Validate and sanitize the 'description' field
+  body("description")
+    .trim()
+    .notEmpty()
+    .withMessage("Description is required")
+    .isString()
+    .withMessage("Description must be a valid string"),
+  // Validate 'status' field
+  body("status")
+    .notEmpty()
+    .withMessage("Status is required")
+    .isIn(["pending", "working", "review", "done", "archive"])
+    .withMessage("Invalid status value"),
+  // Validate 'assignee' field
+  body("assignee")
+    .optional({ checkFalsy: true }) // This field is optional
+    .isMongoId()
+    .withMessage("Assignee must be a valid Mongo ID"),
+  // Validate 'isDeleted' field
+  body("isDeleted")
+    .optional() // This field is optional
+    .isBoolean()
+    .withMessage("isDeleted must be a boolean")
+    .toBoolean(), // Convert to boolean
+];
 //Create a task
 taskController.createTask = async (req, res, next) => {
-  const info = req.body;
   try {
-    if (!info) throw new AppError(402, "Bad Request", "Create Task Error");
-    const created = await Task.create(info);
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+    const created = await Task.create(req.body);
     sendResponse(
       res,
       200,
@@ -60,10 +96,10 @@ taskController.getSingleTask = async (req, res, next) => {
     if (!mongoose.isValidObjectId(taskId)) {
       return res.status(400).json({ message: "Invalid ObjectId" });
     }
-    const task = await Task.findById(taskId);
+    const task = await Task.findOne({ _id: taskId, isDeleted: false });
 
     if (!task) {
-      return res.status(404).json({ message: "Task not found" });
+      return res.status(404).json({ message: "Task not found or deleted" });
     }
     sendResponse(
       res,
@@ -183,7 +219,7 @@ taskController.updateStatusById = async (req, res, next) => {
 
 taskController.getAllTasksOfUser = async (req, res, next) => {
   const userId = req.params.userId;
-  const filter = { assignee: userId };
+  const filter = { assignee: userId, isDeleted: false };
   if (!mongoose.isValidObjectId(userId)) {
     return res.status(400).json({ message: "Invalid ObjectId" });
   }

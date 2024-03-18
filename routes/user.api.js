@@ -3,6 +3,7 @@ const {
   createUser,
   getAllUsers,
   getSingleUser,
+  checkUserValidation,
 } = require("../controllers/user.controllers");
 const router = express.Router();
 
@@ -13,7 +14,7 @@ const router = express.Router();
  * @access private, manager
  * @requiredBody: name
  */
-router.post("/", createUser);
+router.post("/", checkUserValidation, createUser);
 //Read
 /**
  * @route GET api/user

@@ -7,6 +7,7 @@ const {
   updateAssigneeById,
   updateStatusById,
   getAllTasksOfUser,
+  checkTaskValidation,
 } = require("../controllers/task.controllers");
 const router = express.Router();
 
@@ -17,7 +18,7 @@ const router = express.Router();
  * @access private, manager
  * @requiredBody: name, description
  */
-router.post("/", createTask);
+router.post("/", checkTaskValidation, createTask);
 //Read
 /**
  * @route GET api/task

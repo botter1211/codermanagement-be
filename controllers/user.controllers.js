@@ -1,14 +1,38 @@
 const { sendResponse, AppError } = require("../helpers/utils.js");
+const { body, validationResult } = require("express-validator");
 const User = require("../models/User.js");
 
 const userController = {};
-
+userController.checkUserValidation = [
+  // Validate and sanitize the 'name' field
+  body("name")
+    .trim()
+    .notEmpty()
+    .withMessage("Name is required")
+    .isString()
+    .withMessage("Name must be a valid string")
+    .custom(async (value) => {
+      // Check for duplicate names
+      const existingUser = await User.findOne({ name: value });
+      if (existingUser) {
+        throw new Error("User with this name already exists");
+      }
+      return true;
+    }),
+  // Validate and sanitize the 'role' field
+  body("role")
+    .optional()
+    .isIn(["employee", "manager"])
+    .withMessage("Invalid role value"),
+];
 //Create a user
 userController.createUser = async (req, res, next) => {
-  const info = req.body;
   try {
-    if (!info) throw new AppError(402, "Bad Request", "Create User Error");
-    const created = await User.create(info);
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+    const created = await User.create(req.body);
     sendResponse(
       res,
       200,
